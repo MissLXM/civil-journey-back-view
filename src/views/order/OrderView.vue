@@ -51,26 +51,20 @@
                     <el-table-column prop="tradeTime" label="发布时间" align="center" :width="flexColumnWidth('tradeTime', orderData.records)" />
                     <el-table-column fixed="right" prop="status" label="状态" align="center" width="100">
                         <template v-slot="scope">
-                            <el-tag :type="scope.row.status === 1 ? 'success' : 'danger'">
-                                {{ scope.row.status === 1 ? '已支付' : '未支付' }}
-                            </el-tag>
+                            <el-tag v-if="scope.row.status === 0" type="danger">未支付</el-tag>
+                            <el-tag v-if="scope.row.status === 1" type="success">已支付</el-tag>
+                            <el-tag v-if="scope.row.status === 2" type="info">已退款</el-tag>
                         </template>
                     </el-table-column>
                     <el-table-column fixed="right" label="选项" align="center" width="120">
                         <template #default="scope">
                             <el-button
                                 link 
-                                v-if="scope.row.status === 1"
-                                type="primary" 
-                            >
-                                <!-- 退款 -->
-                            </el-button>
-                            <el-button
-                                link 
                                 type="danger" 
-                                v-if="scope.row.status === 0"
+                                v-if="scope.row.status === 1"
+                                @click="refundOrderEvent(scope.row)"
                             >
-                                删除订单
+                                退款
                             </el-button>
                         </template>
                     </el-table-column>
@@ -94,7 +88,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { flexColumnWidth } from '@/global'
-import { queryAllOrder } from '@/api/order';
+import { refundOrder, queryAllOrder } from '@/api/order';
 import { Search } from '@element-plus/icons-vue'
 import zhCn from 'element-plus/es/locale/lang/zh-cn';
 
@@ -169,13 +163,24 @@ function queryEvent() {
     }
 }
 
-
 // 清空查询参数
 function clearQueryParams() {
     orderQueryParams.value.currentPage = 1
     orderQueryParams.value.orderId = null
     orderQueryParams.value.consignee = null 
     queryValue.value = null
+}
+
+// 退款事件
+function refundOrderEvent(order: any) {
+    refundOrder(order).then(response => {
+        if (response.data.code === 200) {
+            ElMessage.success('退款成功')
+            loadOrder()
+        } else {
+            ElMessage.error('退款失败')
+        }
+    })
 }
 
 // 分页事件
